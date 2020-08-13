@@ -14,34 +14,70 @@ def get_page(url):
     return soup
 
 
+def get_cleaned_title(title):
+    cleaned_title = title \
+        .replace('\xa0', "") \
+        .replace('\xa02019-20', "") \
+        .replace("🔥", "").replace("💎", "") \
+        .replace("Details about  ", "") \
+        .replace("\xa0🔥 2019-20", "") \
+        .replace("💙", "") \
+        .replace("2019 ", "") \
+        .replace("2019-20 ", "") \
+        .replace("2019-2020 ", "") \
+        .replace("19-20 ", "") \
+        .replace("2019/20 ", "") \
+        .replace("/", "") \
+        .strip()
+    return cleaned_title
+
+
 def get_detail_data(soup):
     try:
-        title = soup.find('h1', id='itemTitle').text.strip('Details about    ')
+        title = get_cleaned_title(soup.find('h1', id='itemTitle').text)
     except:
-        title = ''
+        title = None
     try:
+        # try:
+        #     try:
+        #         p = soup.find('span', id='prcIsum').text.strip()
+        #     except:
+        #         p = soup.find('span', id='mm-saleDscPrc').text.strip()
+        # except:
+        #     p = soup.find('span', id='prcIsum_bidPrice').text.strip()
         try:
-            try:
-                p = soup.find('span', id='prcIsum').text.strip()
-            except:
-                p = soup.find('span', id='mm-saleDscPrc').text.strip()
+            p = soup.find('span', class_='notranslate vi-VR-cvipPrice') \
+                .text \
+                .strip()
         except:
-            p = soup.find('span', id='prcIsum_bidPrice').text.strip()
+            p = soup.find('span', id='prcIsum') \
+                .text \
+                .strip()
         currency, price = p.split(" ")
     except:
-        currency = ''
-        price = ''
+        currency = None
+        price = None
     try:
-        sold_items = soup.find('span', class_='vi-qtyS-hot').find('a').text
+        eBay_item_number = soup.find('div',
+                id='descItemNumber').text.strip()
     except:
-        sold_items = ''
+        eBay_item_number = None
+    try:
+        product_date = soup.find('span',
+                                 id='bb_tlft')\
+                                .text\
+                                .strip()\
+                                .replace("\n\n", " ")
+    except:
+        product_date = None
+
     data = {
+        'eBay_item_number': eBay_item_number,
+        'date': product_date,
         'title': title,
         'price': price,
-        'currency': currency,
-        'total_sold': sold_items
+        'currency': currency
     }
-
     return data
 
 
@@ -58,43 +94,58 @@ def write_csv(data, url):
     with open('output.csv', 'a') as csv_file:
         writer = csv.writer(csv_file)
 
-        row = [data['title'], data['price'], data['currency'], data['total_sold'], url]
-
+        row = [
+            f"#{data['eBay_item_number']}",
+            data['date'],
+            data['title'],
+            data['price'],
+            data['currency'],
+            url
+        ]
+        print(row)
         writer.writerow(row)
 
 
-def get_simple_products_url():
+def get_bgs_9_5_products_url():
     # For customized URL mapping
     keyword = "bgs 9.5 zion williamson silver prizm -draft -emergent -select -mosaic -fireworks -duke -crusade -instant -american"
-    number = 1
-    # old_url = 'https://www.ebay.com/sch/i.html?_nkw=mens+watches&_pgn=1'
+    # keyword = input("Enter search keyword: ")
+    number = str(1)
+    # number = input("Enter page no: ")
     base_url = 'https://www.ebay.com/sch/i.html?'
     request_keyword = f"_nkw={keyword}"
-    page_number = f"&_pgn={str(number)}"
-    url = f"{base_url}{request_keyword}{page_number}"
-
-    return url
-
-
-def get_sold_products_url():
-    # For customized URL mapping
-    keyword = "psa 10 zion williamson silver prizm -draft -emergent -select -mosaic -fireworks -duke -crusade -instant -american"
-    number = 1
-    # old_url = 'https://www.ebay.com/sch/i.html?_nkw=mens+watches&_pgn=1'
-    base_url = 'https://www.ebay.com/sch/i.html?'
-    request_keyword = f"_nkw={keyword}"
-    page_number = f"&_pgn={str(number)}"
-    sold_item_filter = f"&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_pgn=2"
+    page_number = f"&_pgn={number}"
+    sold_item_filter = f"&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1"
     url = f"{base_url}{request_keyword}{sold_item_filter}{page_number}"
 
     return url
 
 
+def get_psa_10_products_url():
+    # For customized URL mapping
+    keyword = "psa 10 zion williamson silver prizm -draft -emergent -select -mosaic -fireworks -duke -crusade -instant -american"
+    # keyword = input("Enter search keyword: ")
+    number = str(1)
+    # number = input("Enter page no: ")
+    base_url = 'https://www.ebay.com/sch/i.html?'
+    request_keyword = f"_nkw={keyword}"
+    page_number = f"&_pgn={number}"
+    sold_item_filter = f"&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1"
+    url = f"{base_url}{request_keyword}{sold_item_filter}{page_number}"
+
+    return url
+
+
+def get_bgs_9_5_products_average():
+    pass
+
+
 def main():
 
-    products = get_index_data(get_page(get_simple_products_url()))
+    bgs_9_5_products = get_index_data(get_page(get_bgs_9_5_products_url()))
+    psa_10_products = get_index_data(get_page(get_psa_10_products_url()))
 
-    for link in products:
+    for link in bgs_9_5_products:
         data = get_detail_data(get_page(link))
         write_csv(data, link)
 
