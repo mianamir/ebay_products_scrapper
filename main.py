@@ -1,3 +1,4 @@
+from utilities import helpers, data_analysis
 import csv
 
 import requests
@@ -28,6 +29,10 @@ def get_cleaned_title(title):
         .replace("19-20 ", "") \
         .replace("2019/20 ", "") \
         .replace("/", "") \
+        .replace("PSA 10", "")\
+        .replace("psa 10", "")\
+        .replace("PSA10", "")\
+        .replace("PSA", "")\
         .strip()
     return cleaned_title
 
@@ -90,12 +95,31 @@ def get_index_data(soup):
     return urls
 
 
+def set_csv_file_header():
+    # setting file title
+    with open('output.csv', newline='') as f:
+        r = csv.reader(f)
+        data = [line for line in r]
+    with open('output.csv', 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(
+            [
+                "#EBay Item Number",
+                "Date",
+                "Title",
+                "Price",
+                "Currency",
+                "URL"
+            ]
+        )
+        w.writerows(data)
+
+
 def write_csv(data, url):
     with open('output.csv', 'a') as csv_file:
         writer = csv.writer(csv_file)
-
         row = [
-            f"#{data['eBay_item_number']}",
+            data['eBay_item_number'],
             data['date'],
             data['title'],
             data['price'],
@@ -143,12 +167,28 @@ def get_bgs_9_5_products_average():
 def main():
 
     bgs_9_5_products = get_index_data(get_page(get_bgs_9_5_products_url()))
-    psa_10_products = get_index_data(get_page(get_psa_10_products_url()))
+    # psa_10_products = get_index_data(get_page(get_psa_10_products_url()))
 
-    for link in bgs_9_5_products:
-        data = get_detail_data(get_page(link))
-        write_csv(data, link)
+    print("----- BGS 9.5 Products Scrapping Started ------")
+    print()
+    print("**********************************************")
+    print("**********************************************")
+    print("**********************************************")
+    print()
 
+    # for link in bgs_9_5_products:
+    #     data = get_detail_data(get_page(link))
+    #     write_csv(data, link)
+
+    print()
+    print("**********************************************")
+    print("**********************************************")
+    print("**********************************************")
+    print()
+    print("----- BGS 9.5 Products Scrapping Ended ------")
+
+    # helpers.append_14_days_data_into_file()
+    data_analysis.get_bgs_products_average()
 
 if __name__ == '__main__':
     main()
